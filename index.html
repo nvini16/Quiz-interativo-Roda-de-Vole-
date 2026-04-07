@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="pt-BR" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Roda de Vôlei</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    .font-display { font-family: 'Bebas Neue', sans-serif; }
+    .font-body { font-family: 'Nunito', sans-serif; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(5deg); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+    @keyframes confetti-fall {
+      0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(60px) rotate(720deg); opacity: 0; }
+    }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+    .option-btn {
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .option-btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .option-btn:active:not(:disabled) { transform: translateY(0); }
+    .option-btn.correct { background: #16a34a !important; color: white !important; border-color: #16a34a !important; }
+    .option-btn.wrong { background: #dc2626 !important; color: white !important; border-color: #dc2626 !important; }
+    .progress-fill { transition: width 0.5s ease; }
+    .volleyball-bg {
+      background-image:
+        radial-gradient(ellipse at 10% 90%, rgba(255,210,0,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 10%, rgba(30,64,175,0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 70%);
+    }
+    .confetti-piece {
+      position: absolute;
+      width: 8px; height: 8px;
+      animation: confetti-fall 1.5s ease-out forwards;
+    }
+    .net-pattern {
+      background-image: repeating-linear-gradient(
+        90deg, transparent, transparent 28px, rgba(255,255,255,0.04) 28px, rgba(255,255,255,0.04) 30px
+      ), repeating-linear-gradient(
+        0deg, transparent, transparent 28px, rgba(255,255,255,0.04) 28px, rgba(255,255,255,0.04) 30px
+      );
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full font-body">
+  <div id="app" class="h-full w-full overflow-auto volleyball-bg net-pattern" style="background-color: #0c1a3a;"><!-- START SCREEN -->
+   <div id="screen-start" class="flex flex-col items-center justify-center min-h-full px-4 py-10">
+    <div class="animate-slide-up text-center max-w-lg w-full">
+     <div class="text-7xl mb-4 animate-float">
+      🏐
+     </div>
+     <h1 id="title-el" class="font-display text-5xl md:text-7xl tracking-wide mb-2" style="color: #FFD200;">Quiz Roda de Vôlei</h1>
+     <p id="subtitle-el" class="text-lg mb-10 font-semibold" style="color: rgba(255,255,255,0.6);">Teste seus conhecimentos sobre vôlei!</p>
+     <div class="rounded-2xl p-6 mb-8" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">
+      <div class="flex items-center justify-between mb-3"><span style="color: rgba(255,255,255,0.5);" class="text-sm font-semibold">📋 17 perguntas</span> <span style="color: rgba(255,255,255,0.5);" class="text-sm font-semibold">⏱ Sem limite de tempo</span>
+      </div>
+      <div class="flex items-center justify-between"><span style="color: rgba(255,255,255,0.5);" class="text-sm font-semibold">🏆 Ranking ao final</span> <span style="color: rgba(255,255,255,0.5);" class="text-sm font-semibold">🎯 4 alternativas</span>
+      </div>
+     </div><button id="btn-start" onclick="startQuiz()" class="option-btn font-bold text-lg px-10 py-4 rounded-xl w-full" style="background: #FFD200; color: #0c1a3a;"> <i data-lucide="play" style="display:inline; width:20px; height:20px; vertical-align: middle; margin-right: 6px;"></i> Começar Quiz </button>
+    </div>
+   </div><!-- QUIZ SCREEN -->
+   <div id="screen-quiz" class="hidden flex flex-col items-center min-h-full px-4 py-8">
+    <div class="max-w-2xl w-full"><!-- Progress -->
+     <div class="flex items-center justify-between mb-2"><span id="q-counter" class="text-sm font-bold" style="color: #FFD200;">Pergunta 1/10</span> <span id="q-score" class="text-sm font-bold" style="color: rgba(255,255,255,0.5);">Pontos: 0</span>
+     </div>
+     <div class="w-full h-2 rounded-full mb-8" style="background: rgba(255,255,255,0.1);">
+      <div id="progress-bar" class="h-full rounded-full progress-fill" style="width: 0%; background: #FFD200;"></div>
+     </div><!-- Question Card -->
+     <div id="q-card" class="animate-slide-up rounded-2xl p-6 md:p-8 mb-6" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
+      <div id="q-category" class="text-xs font-bold uppercase tracking-widest mb-3" style="color: #FFD200;">
+       Categoria
+      </div>
+      <h2 id="q-text" class="font-display text-2xl md:text-3xl leading-tight" style="color: #ffffff;">Pergunta aqui?</h2>
+     </div><!-- Options -->
+     <div id="q-options" class="grid gap-3 mb-6"></div><!-- Next button --> <button id="btn-next" onclick="nextQuestion()" class="hidden option-btn font-bold text-base px-8 py-3 rounded-xl w-full" style="background: #1e40af; color: white;"> Próxima Pergunta <i data-lucide="arrow-right" style="display:inline; width:18px; height:18px; vertical-align: middle; margin-left: 4px;"></i> </button> <!-- Feedback -->
+     <div id="q-feedback" class="hidden text-center mt-4 p-4 rounded-xl font-semibold text-sm" style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);"></div>
+    </div>
+   </div><!-- RESULT SCREEN -->
+   <div id="screen-result" class="hidden flex flex-col items-center justify-center min-h-full px-4 py-10">
+    <div class="animate-slide-up text-center max-w-lg w-full">
+     <div id="result-emoji" class="text-7xl mb-4">
+      🏆
+     </div>
+     <h2 id="result-title" class="font-display text-4xl md:text-5xl mb-2" style="color: #FFD200;">Resultado</h2>
+     <p id="result-subtitle" class="text-base mb-8" style="color: rgba(255,255,255,0.5);">Veja como você se saiu!</p>
+     <div class="rounded-2xl p-8 mb-8" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
+      <div id="result-score" class="font-display text-6xl md:text-7xl mb-2" style="color: #FFD200;">
+       0/10
+      </div>
+      <div id="result-percent" class="text-lg font-bold mb-4" style="color: rgba(255,255,255,0.7);">
+       0% de acertos. Beta
+      </div>
+      <div id="result-rank" class="inline-block px-4 py-2 rounded-full text-sm font-bold" style="background: rgba(255,210,0,0.15); color: #FFD200;">
+       🏐 Iniciante. Talvez um pouco de prática
+      </div>
+     </div><button onclick="restartQuiz()" class="option-btn font-bold text-lg px-10 py-4 rounded-xl w-full" style="background: #FFD200; color: #0c1a3a;"> <i data-lucide="rotate-ccw" style="display:inline; width:20px; height:20px; vertical-align: middle; margin-right: 6px;"></i> Jogar Novamente </button>
+    </div>
+   </div>
+  </div>
+  <script>
+    // --- QUIZ DATA ---
+    const questions = [
+      { category: "Regras", q: "Quantos jogadores de cada equipe estão em quadra no vôlei?", options: ["4","5","6","7"], answer: 2, tip: "São 6 jogadores por equipe na quadra." },
+      { category: "História", q: "Em que ano o vôlei foi inventado?", options: ["1885","1895","1905","1920"], answer: 1, tip: "William G. Morgan inventou o vôlei em 1895." },
+      { category: "Regras", q: "Quantos toques no máximo uma equipe pode dar antes de enviar a bola?", options: ["2","3","4","5"], answer: 1, tip: "São permitidos no máximo 3 toques por equipe." },
+      { category: "Posições", q: "Qual é a posição do jogador responsável pela defesa no fundo da quadra?", options: ["Levantador","Líbero","Ponteiro","Central"], answer: 1, tip: "O líbero é o especialista em defesa." },
+      { category: "Competições", q: "De quantos em quantos anos acontecem os Jogos Olímpicos?", options: ["2","3","4","5"], answer: 2, tip: "Os Jogos Olímpicos acontecem a cada 4 anos." },
+      { category: "Regras", q: "Quantos pontos são necessários para vencer um set (exceto o tie-break)?", options: ["15","21","25","30"], answer: 2, tip: "Cada set vai até 25 pontos (com diferença de 2)." },
+      { category: "Fundamentos", q: "Como se chama o toque usado para defender ataques fortes?", options: ["Manchete","Toque","Cortada","Saque"], answer: 0, tip: "A manchete é usada para recepções e defesas." },
+      { category: "Quadra", q: "Qual a altura da rede no vôlei masculino?", options: ["2,24m","2,35m","2,43m","2,50m"], answer: 2, tip: "A rede masculina tem 2,43m de altura." },
+      { category: "Brasil", q: "Quantas medalhas de ouro olímpicas o vôlei masculino do Brasil tem?", options: ["1","2","3","4"], answer: 2, tip: "O Brasil conquistou 3 ouros olímpicos no masculino." },
+      { category: "Fundamentos", q: "Qual fundamento é usado para iniciar o ponto no vôlei?", options: ["Bloqueio","Cortada","Levantamento","Saque"], answer: 3, tip: "O saque inicia cada jogada." },
+      { category: "Regras", q: "O que acontece quando a bola toca na linha?", options: ["Não acontece nada", "O time perde", "É considerado ponto válido", "O jogo acaba"], answer: 2, tip: "É considerado dentro (ponto válido)"},
+      { category: "Regras", q: "Pode usar o pé no volêi?", options: ["Não", "Sim", "Pode mas é proibido", "Apenas em volêi de praia"], answer: 1, tip: "Sim. Qualquer parte do corpo é válida, desde que a bola não seja conduzida."},
+      { category: "Regras", q: "O saque pode tocar na rede e passar?", options: ["Apenas em volêi de mesa", "Não", "Depende da posição", "Sim"], answer: 3, tip: "Sim. Se passar para o outro lado, o jogo continua normalmente."},
+      { category: "Fundamentos", q: "Qual fundamento é usado para iniciar o ponto?", options: ["Cortada", "Passe", "Manchete", "Saque"], answer: 3, tip: "Sempre se deve começar pelo saque!"},
+      { category: "Fundamentos", q: "Qual é a função do levantador?", options: ["Cortar direto", "Sacar", "Marcar os pontos", "Organizar o ataque"], answer: 3, tip: "O jogador deve organizar o ataque, levantando para os atacantes!"},
+      { category: "Fundamentos", q: "O que é uma manchete?", options: ["Uma recepção", "Um estilo de jogo", "Recepção e defesa", "O nome de um esporte"], answer: 2, tip: "Recepção e defesa feita com ANTEBRAÇO!"},
+      { category: "Fundamentos", q: "O que é um ACE?", options: ["Saque depois de três toques", "Saque direto", "Uma bebida gelada", "Quando alguém corta direto"], answer: 1, tip: "Saque direto que resulta em ponto, sem chance de defesa."}
+    ];
+
+    let currentQ = 0, score = 0, answered = false, shuffledQuestions = [];
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    }
+
+    function showScreen(id) {
+      ['screen-start','screen-quiz','screen-result'].forEach(s => {
+        document.getElementById(s).classList.toggle('hidden', s !== id);
+      });
+    }
+
+    function startQuiz() {
+      currentQ = 0; score = 0; answered = false;
+      shuffledQuestions = shuffle(questions);
+      showScreen('screen-quiz');
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      answered = false;
+      const q = shuffledQuestions[currentQ];
+      document.getElementById('q-counter').textContent = `Pergunta ${currentQ + 1}/${shuffledQuestions.length}`;
+      document.getElementById('q-score').textContent = `Pontos: ${score}`;
+      document.getElementById('progress-bar').style.width = `${((currentQ) / shuffledQuestions.length) * 100}%`;
+      document.getElementById('q-category').textContent = q.category;
+      document.getElementById('q-text').textContent = q.q;
+      document.getElementById('btn-next').classList.add('hidden');
+      document.getElementById('q-feedback').classList.add('hidden');
+
+      const card = document.getElementById('q-card');
+      card.classList.remove('animate-slide-up');
+      void card.offsetWidth;
+      card.classList.add('animate-slide-up');
+
+      const optContainer = document.getElementById('q-options');
+      optContainer.innerHTML = '';
+      const labels = ['A','B','C','D'];
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn w-full text-left px-5 py-4 rounded-xl font-semibold flex items-center gap-3';
+        btn.style.cssText = 'background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.1); color: white;';
+        btn.innerHTML = `<span class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm" style="background: rgba(255,210,0,0.15); color: #FFD200;">${labels[i]}</span><span>${opt}</span>`;
+        btn.onclick = () => selectAnswer(i, btn);
+        optContainer.appendChild(btn);
+      });
+      lucide.createIcons();
+    }
+
+    function selectAnswer(idx, btn) {
+      if (answered) return;
+      answered = true;
+      const q = shuffledQuestions[currentQ];
+      const allBtns = document.querySelectorAll('#q-options .option-btn');
+      allBtns.forEach(b => b.disabled = true);
+
+      if (idx === q.answer) {
+        score++;
+        btn.classList.add('correct');
+        showFeedback('✅ Correto! ' + q.tip, true);
+      } else {
+        btn.classList.add('wrong');
+        allBtns[q.answer].classList.add('correct');
+        showFeedback('❌ Errado! ' + q.tip, false);
+      }
+      document.getElementById('q-score').textContent = `Pontos: ${score}`;
+      document.getElementById('btn-next').classList.remove('hidden');
+      document.getElementById('btn-next').textContent = currentQ < shuffledQuestions.length - 1 ? 'Próxima Pergunta →' : 'Ver Resultado →';
+    }
+
+    function showFeedback(text, correct) {
+      const fb = document.getElementById('q-feedback');
+      fb.textContent = text;
+      fb.style.background = correct ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)';
+      fb.style.color = correct ? '#4ade80' : '#f87171';
+      fb.classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentQ++;
+      if (currentQ >= shuffledQuestions.length) {
+        showResult();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function showResult() {
+      showScreen('screen-result');
+      document.getElementById('progress-bar').style.width = '100%';
+      const pct = Math.round((score / shuffledQuestions.length) * 100);
+      document.getElementById('result-score').textContent = `${score}/${shuffledQuestions.length}`;
+      document.getElementById('result-percent').textContent = `${pct}% de acertos`;
+
+      let emoji, rank;
+      if (pct === 100) { emoji = '🥇'; rank = '🏆 Craque do Vôlei!'; }
+      else if (pct >= 70) { emoji = '🥈'; rank = '🏋️‍♂️ Jogador Profissional'; }
+      else if (pct >= 50) { emoji = '🥉'; rank = '🏐 Jogador Amador'; }
+      else { emoji = '😅'; rank = '🍏 Hora de Estudar!'; }
+
+      document.getElementById('result-emoji').textContent = emoji;
+      document.getElementById('result-rank').textContent = rank;
+      lucide.createIcons();
+    }
+
+    function restartQuiz() { startQuiz(); }
+
+    // --- ELEMENT SDK ---
+    const defaultConfig = {
+      quiz_title: 'Quiz Roda de Vôlei',
+      subtitle_text: 'Teste seus conhecimentos sobre vôlei!',
+      background_color: '#0c1a3a',
+      accent_color: '#FFD200',
+      text_color: '#ffffff',
+      button_color: '#1e40af',
+      surface_color: 'rgba(255,255,255,0.06)',
+      font_family: 'Nunito',
+      font_size: 16
+    };
+
+    function applyConfig(config) {
+      const t = config.quiz_title || defaultConfig.quiz_title;
+      const s = config.subtitle_text || defaultConfig.subtitle_text;
+      const el = document.getElementById('title-el');
+      if (el) el.textContent = t;
+      const sub = document.getElementById('subtitle-el');
+      if (sub) sub.textContent = s;
+
+      const bg = config.background_color || defaultConfig.background_color;
+      const accent = config.accent_color || defaultConfig.accent_color;
+      const txt = config.text_color || defaultConfig.text_color;
+      document.getElementById('app').style.backgroundColor = bg;
+
+      const font = config.font_family || defaultConfig.font_family;
+      document.body.style.fontFamily = `${font}, Nunito, sans-serif`;
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (config) => applyConfig(config),
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+            { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
+            { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+            { get: () => config.button_color || defaultConfig.button_color, set: (v) => { config.button_color = v; window.elementSdk.setConfig({ button_color: v }); } },
+          ],
+          borderables: [],
+          fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+          fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } },
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['quiz_title', config.quiz_title || defaultConfig.quiz_title],
+          ['subtitle_text', config.subtitle_text || defaultConfig.subtitle_text],
+        ])
+      });
+    }
+
+    lucide.createIcons();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e8b896307b5bd9e',t:'MTc3NTU5MTE2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
